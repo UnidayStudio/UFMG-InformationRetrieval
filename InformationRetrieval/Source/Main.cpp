@@ -27,8 +27,7 @@ int main(int argc, char** argv){
 		try {
 			SiteResult site = crawl.GetNext();
 
-			std::cout << site.title << "\n" << site.url << "\n";
-			std::cout << "Crawl Time = " << site.crawlTimeMs << "ms\n\n";
+			site.Print();
 		}
 		catch (std::exception e) {
 			std::cerr << e.what() << "\n";

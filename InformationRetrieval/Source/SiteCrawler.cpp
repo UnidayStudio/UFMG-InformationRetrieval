@@ -33,6 +33,12 @@ SiteResult SiteCrawler::GetNext() {
 	if (success) {
 		out.title = m_spider.lastHtmlTitle();
 		out.url = m_spider.lastUrl();
+
+		out.keywords = m_spider.lastHtmlKeywords();
+		out.description = m_spider.lastHtmlDescription();
+
+		std::string html = m_spider.lastHtml();
+		out.pageSize = html.size();
 	}
 	else {
 		throw std::exception(

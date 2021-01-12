@@ -18,6 +18,7 @@ public:
 
 	std::vector<SiteResult> Get(size_t n);
 
+
 	double GetAverageCrawlTimeMs();
 	double GetAverageCrawlTimeSeconds();
 
