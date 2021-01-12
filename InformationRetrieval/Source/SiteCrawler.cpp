@@ -98,6 +98,7 @@ size_t SiteCrawler::GetAllToDisk(size_t chunkSize, size_t limit){
 	std::string prefix = "Result\\" + GetUrlAsFileName();
 	std::string sufix = ".crawlData";
 
+	std::cout << " [" <<prefix << " Started!]\n";
 	while (1) {
 		std::vector<SiteResult> result = Get(chunkSize);
 		size_t resultSize = result.size();
@@ -113,6 +114,7 @@ size_t SiteCrawler::GetAllToDisk(size_t chunkSize, size_t limit){
 			for (auto& res : result) {
 				res.Save(&f);
 			}
+			std::cout << "+" << resultSize << " urls to File: " << prefix + std::to_string(files) + sufix << "\n";
 		}
 
 		if (m_reachedTheEnd) {
@@ -127,6 +129,10 @@ size_t SiteCrawler::GetAllToDisk(size_t chunkSize, size_t limit){
 	//std::cout << "\nCrawler Result:\n\t- Files Created: " << files << "\n";
 	//std::cout << "\t- Crawled URLS: " << crawled << "\n";
 	return crawled;
+}
+
+bool SiteCrawler::IsFinished(){
+	return m_reachedTheEnd || limitReached;
 }
 
 double SiteCrawler::GetAverageCrawlTimeMs() {

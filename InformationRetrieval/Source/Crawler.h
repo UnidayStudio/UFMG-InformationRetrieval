@@ -32,10 +32,10 @@ private:
 	std::mutex m_lock;
 
 	std::atomic<size_t> m_crawled;
+	std::atomic<size_t> m_activeThreads;
 
 	// The current threads being executed
 	std::vector<std::thread> m_threadPool;
-	std::mutex m_poolLock;
 
 	// A list of URLs (outbounds) not yet crawled
 	std::vector<std::string> m_urlQueue;

@@ -10,7 +10,7 @@
 #include "File.h"
 
 #define CRAWL_LIMIT 100
-#define CHUNK_SIZE 500
+#define CHUNK_SIZE 10
 #define MAX_THREADS 1000
 
 Crawler::Crawler(){
@@ -27,12 +27,15 @@ Crawler::Crawler(const std::vector<std::string>& seeds){
 	maxThreads = MAX_THREADS;
 
 	m_crawled = 0;
+	m_activeThreads = 0;
 
 	AddToQueue(seeds);
 }
 
 Crawler::~Crawler(){
-
+	for (auto& t : m_threadPool) {
+		t.join();
+	}
 }
 
 void Crawler::AddToQueue(const std::vector<std::string>& urls){
@@ -55,7 +58,7 @@ void Crawler::Run(){
 	while (m_crawled < crawlLimit) {
 		LoadThreads();
 
-		m_poolLock.lock();
+		/*m_poolLock.lock();
 		if (m_threadPool.size() > 0) {
 			m_threadPool.back().join();
 			m_threadPool.pop_back();
@@ -67,7 +70,15 @@ void Crawler::Run(){
 			break;
 		}
 		m_lock.unlock();
-		m_poolLock.unlock();
+		m_poolLock.unlock();*/
+		//m_activeThreads
+		m_lock.lock();
+		size_t qSize = m_urlQueue.size();
+		m_lock.unlock();
+
+		if (qSize == 0 && m_activeThreads == 0) {
+			break;
+		}
 	}
 }
 
@@ -80,22 +91,22 @@ void Crawler::LoadThreads(){
 
 	m_lock.lock();
 	size_t toStart = m_urlQueue.size();
-	size_t currentT = m_threadPool.size();
+	size_t currentT = m_activeThreads;
 	m_lock.unlock();
 
 	if (toStart + currentT > maxThreads) {
 		toStart = maxThreads - currentT;
 	}
 
-	m_poolLock.lock();
 	for (size_t i = 0; i < toStart; i++) {
 		m_threadPool.push_back(std::thread(&Crawler::RunNextQueuedURL, this));
 		//RunNextQueuedURL();
 	}
-	m_poolLock.unlock();
 }
 
 void Crawler::RunNextQueuedURL(){
+	m_activeThreads++;
+
 	std::string url;
 	{
 		m_lock.lock();
@@ -113,14 +124,19 @@ void Crawler::RunNextQueuedURL(){
 	std::cout << "- Crawling: " << url << "\n";
 	SiteCrawler crawl(url);
 
-	size_t pageCount = crawl.GetAllToDisk(chunkSize, crawlLimit);
-	m_crawled += pageCount;
+	size_t pageCount = 0;
+	size_t outCount = 0;
+	while (!crawl.IsFinished()) {
+		pageCount += crawl.GetAllToDisk(chunkSize, 2);
+		m_crawled += pageCount;
 
-	std::vector<std::string> out = crawl.GetOutboundLinks();
-
-	AddToQueue(out);
+		std::vector<std::string> out = crawl.GetOutboundLinks();
+		outCount += out.size();
+		AddToQueue(out);
+	}
 
 	std::cout << "- Finished: " << url << ".\n\t- Pages: " << pageCount << "\n";
-	std::cout << "\t- Outbounds: " << out.size() << "\n";
+	std::cout << "\t- Outbounds: " << outCount << "\n";
 	std::cout << "\t- Average Time: " << crawl.GetAverageCrawlTimeMs() << "ms\n";
+	m_activeThreads--;
 }
