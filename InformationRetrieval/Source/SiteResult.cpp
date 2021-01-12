@@ -8,6 +8,15 @@ SiteResult::SiteResult(){
 
 }
 
+SiteResult::SiteResult(const SiteResult & other){
+	this->title			= other.title;
+	this->url			= other.url;
+	this->keywords		= other.keywords;
+	this->description	= other.description;
+	this->crawlTimeMs	= other.crawlTimeMs;
+	this->pageSize		= other.pageSize;
+}
+
 SiteResult::~SiteResult(){
 
 }
@@ -23,7 +32,13 @@ void SiteResult::Save(File * file){
 }
 
 void SiteResult::Load(File * file){
+	file->ReadStr(title);
+	file->ReadStr(url);
+	file->ReadStr(keywords);
+	file->ReadStr(description);
 
+	file->Read(crawlTimeMs);
+	file->Read(pageSize);
 }
 
 void SiteResult::Print(){

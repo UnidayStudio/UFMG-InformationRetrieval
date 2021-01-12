@@ -7,6 +7,7 @@ class File;
 class SiteResult {
 public:
 	SiteResult();
+	SiteResult(const SiteResult& other);
 	virtual ~SiteResult();
 
 	void Save(File* file);

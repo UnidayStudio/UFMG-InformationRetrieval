@@ -6,42 +6,36 @@
 #include <iostream>
 
 #include "SiteCrawler.h"
+#include "File.h"
 
+#include "Crawler.h"
 
 int main(int argc, char** argv){
-	if (argc != 3) {
-		std::cerr <<
-			"This program takes exactly two arguments:\n"
-			"- a URL of a page to to crawl and"
-			"- a number n of additional links within this page to crawl next.";
-		return -1;
+#if 0
+	// To test the save/load
+	File f(argv[1], File::READ);
+	size_t s;
+
+	f.Read(s);
+	for (size_t i = 0; i < s; i++) {
+		SiteResult result;
+
+		result.Load(&f);
+		result.Print();
 	}
-
-	SiteCrawler crawl(argv[1]);
-	int crawlCount;
-	sscanf(argv[2], "%d", &crawlCount);
-
-	std::cout << "Crawling " << argv[1] << " (with " << crawlCount << " addicional links)...\n\n";
-
-	for (int i = 0; i <= crawlCount; i++) {
-		try {
-			SiteResult site = crawl.GetNext();
-
-			site.Print();
-		}
-		catch (std::exception e) {
-			std::cerr << e.what() << "\n";
-			break;
-		}
-	}
-
-	std::cout << "\nAverage Crawl Time = ";
-	std::cout << crawl.GetAverageCrawlTimeMs() << "ms, ";
-	std::cout << crawl.GetAverageCrawlTimeSeconds() << "s\n";
-
-#ifdef __GNUC__
 #else
-	system("pause");
+	std::vector<std::string> out = {
+		"http://www.tim.com.br",
+		"http://jornaldotempo.uol.com.br",
+		"http://casa.abril.com.br"
+	};
+
+	Crawler myCrawl(out);
+
+	myCrawl.Run();
+	
 #endif
+
+	system("pause");
 	return 0;
 }
