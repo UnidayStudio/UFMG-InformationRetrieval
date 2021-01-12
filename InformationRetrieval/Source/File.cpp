@@ -1,10 +1,40 @@
 #pragma warning(disable:4996)
 
-
 #include "File.h"
 
 #include <stdio.h>
 #include <string>
+
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+
+
+std::vector<std::string> GetFilesAt(const std::string & path) {
+	std::vector<std::string> names;
+
+	for (const auto & entry : fs::directory_iterator(path)) {
+		names.push_back(entry.path().string());
+	}
+	return names;
+}
+
+std::string GetFileName(const std::string & filePath) {
+	return fs::path(filePath).filename().string();
+}
+
+std::string replaceAll(const std::string& entry, const std::string& from, const std::string& to) {
+	std::string str = entry;
+
+	if (from.empty())
+		return str;
+	size_t start_pos = 0;
+	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+		str.replace(start_pos, from.length(), to);
+		start_pos += to.length();
+	}
+
+	return str;
+}
 
 
 File::File(const std::string & fileName, FileMode mode){
@@ -60,3 +90,4 @@ bool File::WriteStr(const std::string & buffer) {
 
 	return out1 && out2;
 }
+

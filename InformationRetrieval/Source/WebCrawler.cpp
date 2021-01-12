@@ -21,6 +21,9 @@ static std::atomic<bool> __forceInterrupt = false;
 WebCrawler::WebCrawler() {
 	m_forceInterrupt = false;
 	m_activeThreadCount = 0;
+
+	m_crawledSeedCount = 0;
+	m_crawledUrlCount = 0;
 }
 
 WebCrawler::~WebCrawler() {
@@ -157,7 +160,7 @@ void WebCrawler::CrawlUrl(const std::string & url){
 				site.crawlTimeMs = timer.Get();
 
 				results.push_back(site);
-
+				
 				m_crawledUrlCount++;
 
 				// For the stats to this website:

@@ -4,6 +4,11 @@
 #include <string>
 #include <vector>
 
+std::vector<std::string> GetFilesAt(const std::string & path);
+std::string GetFileName(const std::string & filePath);
+
+// Small utility function to remove a character from a string.
+std::string replaceAll(const std::string& entry, const std::string& from, const std::string& to);
 
 class File {
 public:
