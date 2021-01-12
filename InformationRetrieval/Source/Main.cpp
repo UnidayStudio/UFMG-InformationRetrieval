@@ -5,10 +5,12 @@
 
 #include <iostream>
 
-#include "SiteCrawler.h"
+/*#include "SiteCrawler.h"
 #include "File.h"
 
-#include "Crawler.h"
+#include "Crawler.h"*/
+
+#include "WebCrawler.h"
 
 int main(int argc, char** argv){
 #if 0
@@ -30,10 +32,13 @@ int main(int argc, char** argv){
 		"http://casa.abril.com.br"
 	};
 
-	Crawler myCrawl(out);
+	//Crawler myCrawl(out);
+	//myCrawl.Run();
 
-	myCrawl.Run();
-	
+	WebCrawler crawl;
+
+	crawl.AddToQueue(out);
+	crawl.Run();	
 #endif
 
 	system("pause");

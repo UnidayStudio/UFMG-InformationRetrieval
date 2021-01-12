@@ -164,6 +164,7 @@
     <ClCompile Include="Source\SiteCrawler.cpp" />
     <ClCompile Include="Source\SiteResult.cpp" />
     <ClCompile Include="Source\Timer.cpp" />
+    <ClCompile Include="Source\WebCrawler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Crawler.h" />
@@ -171,6 +172,7 @@
     <ClInclude Include="Source\SiteCrawler.h" />
     <ClInclude Include="Source\SiteResult.h" />
     <ClInclude Include="Source\Timer.h" />
+    <ClInclude Include="Source\WebCrawler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

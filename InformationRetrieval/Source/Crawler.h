@@ -30,6 +30,7 @@ protected:
 
 private:
 	std::mutex m_lock;
+	std::mutex m_poolLock;
 
 	std::atomic<size_t> m_crawled;
 	std::atomic<size_t> m_activeThreads;

@@ -10,7 +10,7 @@
 #include "File.h"
 
 #define CRAWL_LIMIT 100
-#define CHUNK_SIZE 10
+#define CHUNK_SIZE 30
 #define MAX_THREADS 1000
 
 Crawler::Crawler(){
@@ -34,7 +34,9 @@ Crawler::Crawler(const std::vector<std::string>& seeds){
 
 Crawler::~Crawler(){
 	for (auto& t : m_threadPool) {
-		t.join();
+		if (t.joinable()) {
+			t.join();
+		}
 	}
 }
 
@@ -99,8 +101,9 @@ void Crawler::LoadThreads(){
 	}
 
 	for (size_t i = 0; i < toStart; i++) {
+		m_poolLock.lock();
 		m_threadPool.push_back(std::thread(&Crawler::RunNextQueuedURL, this));
-		//RunNextQueuedURL();
+		m_poolLock.unlock();
 	}
 }
 
@@ -111,6 +114,7 @@ void Crawler::RunNextQueuedURL(){
 	{
 		m_lock.lock();
 		if (m_urlQueue.size() == 0) {
+			m_lock.unlock();
 			return;
 		}
 		url = m_urlQueue.back();
