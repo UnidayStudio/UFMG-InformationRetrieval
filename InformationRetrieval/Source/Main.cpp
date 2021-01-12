@@ -4,7 +4,7 @@
 #include "WebCrawler.h"
 #include "File.h"
 
-//#define CRAWLER_RUN
+#define CRAWLER_RUN
 #define CRAWLER_ANALYZE
 
 

@@ -23,5 +23,4 @@ public:
 	double crawlTimeMs;
 	size_t pageSize;
 private:
-
 };

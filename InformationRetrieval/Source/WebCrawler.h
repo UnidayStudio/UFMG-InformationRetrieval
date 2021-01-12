@@ -21,6 +21,7 @@ public:
 
 	void Run();
 
+protected:
 	// Will crawl the specific URL and save to disk.
 	// Will also add outbounds URLs to queue
 	void CrawlUrl(const std::string& url);
