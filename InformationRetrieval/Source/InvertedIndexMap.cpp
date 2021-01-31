@@ -1,6 +1,7 @@
 #include "InvertedIndexMap.h"
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <sstream>
 #include <algorithm>
@@ -147,6 +148,7 @@ WordInfo* InvertedIndexMap::GetWordInfo(const std::string & word){
 	auto it = m_wordMap.find(key);
 	if (it == m_wordMap.end()) {
 		m_wordMap[key] = new WordInfo();
+		m_wordMap[key]->frequency = -1.f;
 	}
 	return m_wordMap[key];
 }
@@ -157,9 +159,40 @@ size_t InvertedIndexMap::AddSite(const std::string & url){
 	return sId;
 }
 
-void InvertedIndexMap::PrintResults(){
-	std::cout << "----------------------------\n";
+std::string InvertedIndexMap::GetSiteUrl(size_t id){
+	auto it = m_siteUrls.find(id);
+	if (it != m_siteUrls.end()) {
+		return it->second;
+	}
+	return "";
+}
 
+bool SortRefs(WordRef a, WordRef b) {
+	if (a.fileId == b.fileId) {
+		return a.position < b.position;
+	}
+	return a.fileId < b.fileId;
+}
+
+void InvertedIndexMap::CalculateWordsFrequency(){
+	for (auto it : m_wordMap) {
+		auto& refs = it.second->references;
+		if (refs.size() == 0) {
+			continue;
+		}
+		std::sort(refs.begin(), refs.end(), SortRefs);
+
+		int siteCount = 1;
+		for (int i = 1; i < refs.size(); i++) {
+			if (refs[i - 1].fileId != refs[i].fileId) {
+				siteCount++;
+			}
+		}
+		it.second->frequency = float(siteCount) / float(m_siteCounter);
+	}
+}
+
+void InvertedIndexMap::PrintResults(){
 	size_t minRef = SIZE_MAX;
 	std::string minWord = "";
 
@@ -180,18 +213,9 @@ void InvertedIndexMap::PrintResults(){
 			maxRef = refs;
 			maxWord = it.first;
 		}
-		if (rand() % 1000 < 5 && samples.size() < 100) {
-			samples.push_back(it.first);
-		}
 	}
 	avgRefs /= m_wordMap.size();
-
-
-	std::cout << "Samples:\n";
-	std::cout << "----------------------------\n";
-	for (auto s : samples) {
-		std::cout << s << "\n";
-	}
+	
 	std::cout << "----------------------------\n";
 	std::cout << "Sites Indexed: " << m_siteUrls.size() << "\n";
 	std::cout << "Words Indexed: " << m_wordMap.size() << "\n";
@@ -206,12 +230,29 @@ void InvertedIndexMap::PrintResults(){
 	std::cout << "----------------------------\n";
 }
 
+void InvertedIndexMap::WriteCsvReport(const std::string & filePath){
+	std::ofstream report(filePath, std::ofstream::out);
+	// Header:
+	report << "Word, Frequence, Occurrences\n";
+
+	for (auto it : m_wordMap) {
+		report << it.first << ", ";
+		report << std::fixed << it.second->frequency << ", ";
+		report << it.second->references.size() << "\n";
+	}
+
+	report.close();
+}
+
 void WordInfo::Save(File * file){
+	file->Write(frequency);
 	file->Write(references.size());
 	file->Write(references[0], references.size());
 }
 
 void WordInfo::Load(File * file){
+	file->Read(frequency);
+
 	size_t size;
 	file->Read(size);
 

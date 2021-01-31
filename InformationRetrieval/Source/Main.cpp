@@ -8,7 +8,8 @@
 
 //#define CRAWLER_RUN
 //#define CRAWLER_ANALYZE
-#define BUILD_INVERTED_INDEX
+//#define INVERTED_INDEX_MAP_BUILD
+#define INVERTED_INDEX_MAP_TEST
 
 
 int main(int argc, char** argv) {
@@ -98,7 +99,7 @@ int main(int argc, char** argv) {
 	}
 #endif
 
-#ifdef BUILD_INVERTED_INDEX
+#ifdef INVERTED_INDEX_MAP_BUILD
 	{
 		InvertedIndexMap iMap;
 		auto results = GetFilesAt("Result\\");
@@ -115,19 +116,50 @@ int main(int argc, char** argv) {
 			std::cout << count++ << "/" << results.size() << "\n";
 		}
 
+		iMap.CalculateWordsFrequency();
+
 		File file("InvertedIndexMap.iMap", File::WRITE);
 		iMap.Save(&file);
 
 		iMap.PrintResults();
+		iMap.WriteCsvReport("InvertedIndexMapReport.csv");
 	}
-	/*{ // Here to test the save/load.
+#endif 
+#ifdef INVERTED_INDEX_MAP_TEST
+	{ // Here to test the save/load.
 		InvertedIndexMap iMap;
 
 		File file("InvertedIndexMap.iMap", File::READ);
 		iMap.Load(&file);
 
-		iMap.PrintResults();
-	}*/
+		//iMap.PrintResults();
+
+		std::cout << "[Testing the Map... type q to quit!]\n";
+		while (1){
+			std::cout << "Enter a word: ";
+
+			std::string userInput;
+			std::cin >> userInput;
+
+			if (userInput == "q") {
+				break;
+			}
+
+			auto info = iMap.GetWordInfo(userInput);
+			std::unordered_map<size_t, std::string> ids;
+			for (auto& ref : info->references) {
+				ids[ref.fileId] = iMap.GetSiteUrl(ref.fileId);
+			}
+
+			std::cout << "Displaying results for: " << userInput << "\n";
+			for (auto it : ids) {
+				std::cout << " -> " << it.second << "\n";
+			}
+			std::cout << "-----\n";
+			std::cout << " - Frequency: " << std::fixed << info->frequency << "\n";
+			std::cout << " - Occurrences: " << info->references.size() << "\n";
+		}
+	}
 #endif
 
 	system("pause");

@@ -15,6 +15,7 @@ struct WordRef {
 };
 
 struct WordInfo {
+	float frequency;
 	std::vector<WordRef> references;
 
 	void Save(File* file);
@@ -45,8 +46,14 @@ public:
 	WordInfo* GetWordInfo(const std::string& word);
 
 	size_t AddSite(const std::string& url);
+	std::string GetSiteUrl(size_t id);
 
+	// The IndexSite will not calculate the frequency.
+	// Call this method when you're done indexing websites.
+	void CalculateWordsFrequency();
+	
 	void PrintResults();
+	void WriteCsvReport(const std::string& filePath);
 private:
 	size_t m_siteCounter;
 	std::unordered_map<size_t, std::string> m_siteUrls;
