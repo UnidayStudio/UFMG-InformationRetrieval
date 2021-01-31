@@ -19,13 +19,14 @@ public:
 
 	void AddToQueue(const std::vector<std::string>& urls);
 
-	void Run();
+	void Run(size_t limit);
 
 protected:
 	// Will crawl the specific URL and save to disk.
 	// Will also add outbounds URLs to queue
 	void CrawlUrl(const std::string& url);
 private:
+	std::atomic<size_t> m_crawlLimit;
 	std::atomic<bool> m_forceInterrupt;
 
 	void SpawnThread(const std::string& url);

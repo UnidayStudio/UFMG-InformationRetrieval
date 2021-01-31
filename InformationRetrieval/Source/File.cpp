@@ -86,6 +86,9 @@ bool File::ReadStr(std::string & buffer) {
 	catch (std::bad_alloc e) {
 		return false;
 	}
+	catch (std::length_error e) {
+		return false;
+	}
 	out2 = Read(&buffer[0], aux);
 
 	return out1 && out2;

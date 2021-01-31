@@ -6,8 +6,15 @@
 
 #include "InvertedIndexMap.h"
 
+/*=================
+// Assignment 02 //
+=================*/
 //#define CRAWLER_RUN
 //#define CRAWLER_ANALYZE
+
+/*=================
+// Assignment 03 //
+=================*/
 //#define INVERTED_INDEX_MAP_BUILD
 #define INVERTED_INDEX_MAP_TEST
 
@@ -24,7 +31,8 @@ int main(int argc, char** argv) {
 		WebCrawler crawl;
 
 		crawl.AddToQueue(out);
-		crawl.Run();
+		// Get ~150.000 sites.
+		crawl.Run(150000);
 	}
 #endif
 
@@ -125,6 +133,7 @@ int main(int argc, char** argv) {
 		iMap.WriteCsvReport("InvertedIndexMapReport.csv");
 	}
 #endif 
+
 #ifdef INVERTED_INDEX_MAP_TEST
 	{ // Here to test the save/load.
 		InvertedIndexMap iMap;

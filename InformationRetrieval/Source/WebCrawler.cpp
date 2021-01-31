@@ -8,8 +8,6 @@
 #include "Timer.h"
 #include "File.h"
 
-//#define CRAWL_LIMIT 100000
-#define CRAWL_LIMIT 50000
 
 #define RESULTS_FILE_SIZE 10000
 #define MAX_THREADS 1000
@@ -63,13 +61,15 @@ void __UserInputs() {
 	}
 }
 
-void WebCrawler::Run(){
+void WebCrawler::Run(size_t limit){
+	m_crawlLimit = limit;
+
 	Timer timer;
 
 	std::thread t(__UserInputs);
 
 	size_t counter = 0;
-	while (m_crawledUrlCount < CRAWL_LIMIT) {
+	while (m_crawledUrlCount < m_crawlLimit) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 		counter++;
@@ -78,7 +78,7 @@ void WebCrawler::Run(){
 			counter = 0;
 			std::cout << "\n\n============================================\n";
 			std::cout << "STATUS: " << m_crawledSeedCount << " seeds, ";
-			std::cout << m_crawledUrlCount << " of " << CRAWL_LIMIT << " URLs crawled.";
+			std::cout << m_crawledUrlCount << " of " << m_crawlLimit << " URLs crawled.";
 			std::cout << "\n============================================\n\n";
 		}
 
@@ -177,7 +177,7 @@ void WebCrawler::CrawlUrl(const std::string & url){
 				finished = true;
 			}
 
-			if (m_crawledUrlCount > CRAWL_LIMIT || m_forceInterrupt) {
+			if (m_crawledUrlCount > m_crawlLimit || m_forceInterrupt) {
 				finished = true;
 			}
 
@@ -221,7 +221,7 @@ void WebCrawler::CrawlUrl(const std::string & url){
 					std::cout << " - Crawled Here: " << crawledHere << " urls\n";
 					std::cout << " - Average Time: " << timeSpent << "ms\n";
 					std::cout << " - Average Page Size: " << pageSizes << "\n";
-					std::cout << " - STATUS: " << m_crawledUrlCount << "/" << CRAWL_LIMIT <<  "\n";
+					std::cout << " - STATUS: " << m_crawledUrlCount << "/" << m_crawlLimit <<  "\n";
 				}
 				break;
 			}
