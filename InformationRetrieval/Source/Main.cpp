@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 
@@ -155,14 +156,29 @@ int main(int argc, char** argv) {
 			}
 
 			auto info = iMap.GetWordInfo(userInput);
-			std::unordered_map<size_t, std::string> ids;
+			std::unordered_map<size_t, int> ids;
 			for (auto& ref : info->references) {
-				ids[ref.fileId] = iMap.GetSiteUrl(ref.fileId);
+				if (ids.find(ref.fileId) == ids.end()) {
+					ids[ref.fileId] = 0;
+				}
+				ids[ref.fileId] += 1;
+			}			
+			std::vector<std::pair<size_t, int>> idsFinal;
+			for (auto it : ids) {
+				idsFinal.push_back(it);
 			}
+			std::sort(
+				idsFinal.begin(), 
+				idsFinal.end(),
+				[](std::pair<size_t, int> a, std::pair<size_t, int> b) {
+					return a.second < b.second;
+				}
+			);
 
 			std::cout << "Displaying results for: " << userInput << "\n";
-			for (auto it : ids) {
-				std::cout << " -> " << it.second << "\n";
+			for (auto it : idsFinal) {
+				std::cout << "(" << it.second << ") -> ";
+				std::cout << iMap.GetSiteUrl(it.first) << "\n";
 			}
 			std::cout << "-----\n";
 			std::cout << " - Frequency: " << std::fixed << info->frequency << "\n";
