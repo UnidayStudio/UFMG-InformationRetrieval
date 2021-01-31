@@ -20,6 +20,8 @@ public:
 	std::string keywords;
 	std::string description;
 
+	std::string html;
+
 	double crawlTimeMs;
 	size_t pageSize;
 private:

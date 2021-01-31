@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <iostream>
 
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
@@ -76,7 +77,15 @@ bool File::ReadStr(std::string & buffer) {
 	size_t aux;
 
 	out1 = Read(aux);
-	buffer.resize(aux);
+	if (!out1) {
+		return false;
+	}
+	try {
+		buffer.resize(aux);
+	}
+	catch (std::bad_alloc e) {
+		return false;
+	}
 	out2 = Read(&buffer[0], aux);
 
 	return out1 && out2;

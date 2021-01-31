@@ -13,6 +13,9 @@ SiteResult::SiteResult(const SiteResult & other){
 	this->url			= other.url;
 	this->keywords		= other.keywords;
 	this->description	= other.description;
+
+	this->html			= other.html;
+
 	this->crawlTimeMs	= other.crawlTimeMs;
 	this->pageSize		= other.pageSize;
 }
@@ -27,6 +30,8 @@ void SiteResult::Save(File * file){
 	file->WriteStr(keywords);
 	file->WriteStr(description);
 
+	file->WriteStr(html);
+
 	file->Write(crawlTimeMs);
 	file->Write(pageSize);
 }
@@ -36,6 +41,8 @@ void SiteResult::Load(File * file){
 	file->ReadStr(url);
 	file->ReadStr(keywords);
 	file->ReadStr(description);
+
+	file->ReadStr(html);
 
 	file->Read(crawlTimeMs);
 	file->Read(pageSize);

@@ -4,8 +4,11 @@
 #include "WebCrawler.h"
 #include "File.h"
 
-#define CRAWLER_RUN
-#define CRAWLER_ANALYZE
+#include "InvertedIndexMap.h"
+
+//#define CRAWLER_RUN
+//#define CRAWLER_ANALYZE
+#define BUILD_INVERTED_INDEX
 
 
 int main(int argc, char** argv) {
@@ -93,6 +96,38 @@ int main(int argc, char** argv) {
 		report.close();
 		urlReport.close();
 	}
+#endif
+
+#ifdef BUILD_INVERTED_INDEX
+	{
+		InvertedIndexMap iMap;
+		auto results = GetFilesAt("Result\\");
+
+		size_t count = 0;
+		for (auto& path : results) {
+			if (GetFileName(path)[0] == '_') {
+				// Ignoring the REPORT files
+				continue; 
+			}
+
+			iMap.IndexFromFile(path);
+
+			std::cout << count++ << "/" << results.size() << "\n";
+		}
+
+		File file("InvertedIndexMap.iMap", File::WRITE);
+		iMap.Save(&file);
+
+		iMap.PrintResults();
+	}
+	/*{ // Here to test the save/load.
+		InvertedIndexMap iMap;
+
+		File file("InvertedIndexMap.iMap", File::READ);
+		iMap.Load(&file);
+
+		iMap.PrintResults();
+	}*/
 #endif
 
 	system("pause");

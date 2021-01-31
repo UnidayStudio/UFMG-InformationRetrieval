@@ -159,6 +159,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\File.cpp" />
+    <ClCompile Include="Source\InvertedIndexMap.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\SiteResult.cpp" />
     <ClCompile Include="Source\Timer.cpp" />
@@ -166,6 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\File.h" />
+    <ClInclude Include="Source\InvertedIndexMap.h" />
     <ClInclude Include="Source\SiteResult.h" />
     <ClInclude Include="Source\Timer.h" />
     <ClInclude Include="Source\WebCrawler.h" />

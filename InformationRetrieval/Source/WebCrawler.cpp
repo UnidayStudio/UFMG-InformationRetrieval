@@ -8,8 +8,10 @@
 #include "Timer.h"
 #include "File.h"
 
-#define CRAWL_LIMIT 100000
-#define RESULTS_FILE_SIZE 2000
+//#define CRAWL_LIMIT 100000
+#define CRAWL_LIMIT 50000
+
+#define RESULTS_FILE_SIZE 10000
 #define MAX_THREADS 1000
 
 #define SLEEP_TIME_MS 100
@@ -144,7 +146,8 @@ void WebCrawler::CrawlUrl(const std::string & url){
 			spider.SleepMs(SLEEP_TIME_MS);
 			timer.Reset();
 
-			bool success = spider.CrawlNext();
+			bool success = false;
+			success = spider.CrawlNext();
 			if (success) {
 				SiteResult site;
 
@@ -154,8 +157,8 @@ void WebCrawler::CrawlUrl(const std::string & url){
 				site.keywords = spider.lastHtmlKeywords();
 				site.description = spider.lastHtmlDescription();
 
-				std::string html = spider.lastHtml();
-				site.pageSize = html.size();
+				site.html = spider.lastHtml();
+				site.pageSize = site.html.size();
 
 				site.crawlTimeMs = timer.Get();
 
