@@ -9,6 +9,8 @@
 
 #include "SiteResult.h"
 
+#include "IMap/Word.h"
+
 class WebCrawler {
 public:
 	WebCrawler();
@@ -19,26 +21,26 @@ public:
 
 	void AddToQueue(const std::vector<std::string>& urls);
 
-	void Run(size_t limit);
+	void Run(PosID limit);
 
 protected:
 	// Will crawl the specific URL and save to disk.
 	// Will also add outbounds URLs to queue
 	void CrawlUrl(const std::string& url);
 private:
-	std::atomic<size_t> m_crawlLimit;
+	std::atomic<PosID> m_crawlLimit;
 	std::atomic<bool> m_forceInterrupt;
 
 	void SpawnThread(const std::string& url);
-	static void WriteResults(std::vector<SiteResult>& results, const std::string& url, const size_t& iteration);
+	static void WriteResults(std::vector<SiteResult>& results, const std::string& url, const PosID& iteration);
 
-	std::atomic<size_t> m_crawledSeedCount; // Different domains
-	std::atomic<size_t> m_crawledUrlCount;
+	std::atomic<PosID> m_crawledSeedCount; // Different domains
+	std::atomic<PosID> m_crawledUrlCount;
 
 	std::mutex m_crawledUrlsLock;
 	std::vector<std::string> m_crawledUrls;
 
-	std::atomic<size_t> m_activeThreadCount;
+	std::atomic<PosID> m_activeThreadCount;
 
 	std::mutex m_threadPoolLock;
 	std::vector<std::thread> m_threadPool;

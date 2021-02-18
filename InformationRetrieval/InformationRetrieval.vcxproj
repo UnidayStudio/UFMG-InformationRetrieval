@@ -107,6 +107,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)InformationRetrieval\Source;$(SolutionDir)ThirdParty\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -146,7 +147,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)ThirdParty\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)InformationRetrieval\Source;$(SolutionDir)ThirdParty\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -159,7 +160,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\File.cpp" />
-    <ClCompile Include="Source\InvertedIndexMap.cpp" />
+    <ClCompile Include="Source\IMap\IMapChunk.cpp" />
+    <ClCompile Include="Source\IMap\InvertedIndexMap.cpp" />
+    <ClCompile Include="Source\IMap\Word.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\SiteResult.cpp" />
     <ClCompile Include="Source\Timer.cpp" />
@@ -167,7 +170,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\File.h" />
-    <ClInclude Include="Source\InvertedIndexMap.h" />
+    <ClInclude Include="Source\IMap\IMapChunk.h" />
+    <ClInclude Include="Source\IMap\InvertedIndexMap.h" />
+    <ClInclude Include="Source\IMap\Word.h" />
     <ClInclude Include="Source\SiteResult.h" />
     <ClInclude Include="Source\Timer.h" />
     <ClInclude Include="Source\WebCrawler.h" />

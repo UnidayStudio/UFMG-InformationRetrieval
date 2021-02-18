@@ -30,7 +30,13 @@
     <ClCompile Include="Source\WebCrawler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\InvertedIndexMap.cpp">
+    <ClCompile Include="Source\IMap\InvertedIndexMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\IMap\Word.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\IMap\IMapChunk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,7 +53,13 @@
     <ClInclude Include="Source\WebCrawler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\InvertedIndexMap.h">
+    <ClInclude Include="Source\IMap\InvertedIndexMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\IMap\Word.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\IMap\IMapChunk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
