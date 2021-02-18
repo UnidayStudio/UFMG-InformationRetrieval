@@ -51,6 +51,8 @@ public:
 	// The IndexSite will not calculate the frequency.
 	// Call this method when you're done indexing websites.
 	void CalculateWordsFrequency();
+
+	void PrintIMapInfo();
 	
 	void PrintResults();
 	void WriteCsvReport(const std::string& filePath);

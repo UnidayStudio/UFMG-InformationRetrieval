@@ -192,6 +192,31 @@ void InvertedIndexMap::CalculateWordsFrequency(){
 	}
 }
 
+void InvertedIndexMap::PrintIMapInfo(){
+	std::cout << "Status:\n";
+	std::cout << "URLs: " << m_siteUrls.size() << "\n";
+	uint64_t sizeUrls = 0;
+	for (auto it : m_siteUrls) {
+		sizeUrls += sizeof(size_t);
+		sizeUrls += sizeof(std::string) + sizeof(char) * it.second.size();
+	}
+	std::cout << "\t - Size: " << sizeUrls << "bytes\n";
+
+	std::cout << "Words: " << m_wordMap.size() << "\n";
+	int refs = 0;
+	uint64_t sizeWords = 0;
+	for (auto word : m_wordMap) {
+		refs += word.second->references.size();
+
+		sizeWords += sizeof(std::string);
+		sizeWords += sizeof(WordInfo*) + sizeof(WordInfo);
+		sizeWords += sizeof(WordRef) * word.second->references.size();
+	}
+	std::cout << "\t - References: " << refs << "\n";
+	std::cout << "\t - Size: " << sizeWords << "bytes\n";
+	std::cout << "\n";
+}
+
 void InvertedIndexMap::PrintResults(){
 	size_t minRef = SIZE_MAX;
 	std::string minWord = "";

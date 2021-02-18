@@ -142,6 +142,8 @@ int main(int argc, char** argv) {
 		File file("InvertedIndexMap.iMap", File::READ);
 		iMap.Load(&file);
 
+		iMap.PrintIMapInfo();
+
 		//iMap.PrintResults();
 
 		std::cout << "[Testing the Map... type q to quit!]\n";
