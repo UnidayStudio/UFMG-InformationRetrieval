@@ -6,6 +6,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include "CkHtmlToText.h"
+
 #include "File.h"
 
 InvertedIndexMap::InvertedIndexMap() {
@@ -71,10 +73,19 @@ void InvertedIndexMap::IndexFromFile(const std::string& filePath){
 }
 
 std::string FormatData(const std::string& html) {
+	/*
+	The Chilkat HTML parser is good, but too slow. 
+	So I'm pre-parsing the content, trying to remove
+	as much as possible from the html tags to make it
+	easier for the Chilkat parser to run.
+
+	Why not only use my parser?
+	Because it's a naive parser and not very efficient.
+	It let's a lot of trash to pass by.
+	*/
 	std::string out;
 
 	int scopeCount = 0;
-
 	for (char c : html) {
 		if (c == '<') {
 			scopeCount++;
@@ -94,6 +105,9 @@ std::string FormatData(const std::string& html) {
 		}
 	}
 
+	CkHtmlToText htmlParser;
+	out = htmlParser.toText(out.c_str());
+
 	return out;
 }
 
@@ -102,7 +116,7 @@ void InvertedIndexMap::IndexSite(const SiteResult & site){
 	std::string html = site.html;
 
 	html = FormatData(html);
-	
+
 	std::istringstream iss(html);
 	std::string input;
 	size_t position = 0;
