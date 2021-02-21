@@ -1,5 +1,7 @@
 #include "IMap/Word.h"
 
+#include <iostream>
+
 #include "File.h"
 
 void WordInfo::Save(File * file) {
@@ -11,8 +13,13 @@ void WordInfo::Save(File * file) {
 
 void WordInfo::Load(File * file) {
 	PosID size;
-	file->Read(size);
+	try {
+		file->Read(size);
 
-	references.resize(size);
-	file->Read(references[0], size);
+		references.resize(size);
+		file->Read(references[0], size);
+	}
+	catch (std::bad_alloc e) {
+		std::cerr << e.what() << "\n";
+	}
 }

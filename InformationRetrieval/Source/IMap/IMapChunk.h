@@ -4,7 +4,8 @@
 #include <unordered_map>
 #include <string>
 
-class WordInfo;
+#include "IMap/Word.h"
+
 class File;
 
 class IMapChunk {
@@ -19,6 +20,11 @@ public:
 	virtual void Load(File* file);
 
 	std::unordered_map<std::string, WordInfo*> wordMap;
+
+	// This variable is set to the last used time this chunk
+	// got an access. It's used internally to determine if
+	// the chunk is inactive and can be freed.
+	PosID lastUsed;
 };
 
 #endif // !IMAP_CHUNK_H

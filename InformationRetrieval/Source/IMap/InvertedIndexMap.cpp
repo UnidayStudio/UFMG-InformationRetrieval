@@ -12,44 +12,23 @@
 InvertedIndexMap::InvertedIndexMap() {
 	m_siteCounter = 0;
 
-#ifdef OLD_APPROACH
-	//pass
-#else
 	m_numWords = 0;
 
 	m_chunkCount = 0;
-	m_currentChunkId = -1; // Note that this will overflow. It's on purpose.
-	m_currentChunk = nullptr;
-#endif
 }
 
 InvertedIndexMap::~InvertedIndexMap() {
-#ifdef OLD_APPROACH
-	//pass
-#else
-	if (m_currentChunk) {
-		delete m_currentChunk;
+	for (auto it : m_loadedChunks) {
+		delete it.second;
 	}
+	m_loadedChunks.clear();
 
 	m_chunkMap.clear();
-#endif 
 
 	m_siteUrls.clear();
 }
 
 void InvertedIndexMap::Save(File * file){	
-#ifdef OLD_APPROACH
-	file->WriteN(m_siteCounter, m_siteUrls.size(), m_wordMap.size());
-
-	for (auto it : m_siteUrls) {
-		file->Write(it.first);
-		file->WriteStr(it.second);
-	}
-	for (auto it : m_wordMap) {
-		file->WriteStr(it.first);
-		it.second->Save(file);
-	}
-#else
 	PosID urls = m_siteUrls.size();
 	file->WriteN(m_siteCounter, urls);
 
@@ -67,37 +46,13 @@ void InvertedIndexMap::Save(File * file){
 		file->Write(it.second);
 	}
 
-	// Finally, saving the current chunk (if exists):
-	if (m_currentChunk) {
-		// It will gonna save it into its own file, no worries!
-		m_currentChunk->Save(m_currentChunkId);
+	// Finally, saving the loaded chunks (if exists):
+	for (auto it : m_loadedChunks) {
+		it.second->Save(it.first);
 	}
-#endif
 }
 
 void InvertedIndexMap::Load(File * file){
-#ifdef OLD_APPROACH
-	size_t urls, words;
-
-	file->ReadN(m_siteCounter, urls, words);
-
-	for (size_t i = 0; i < urls; i++) {
-		size_t idx; std::string content;
-
-		file->Read(idx);
-		file->ReadStr(content);
-
-		m_siteUrls[idx] = content;
-	}
-	for (size_t i = 0; i < words; i++) {
-		size_t idx; std::string key;
-
-		file->ReadStr(key);
-
-		m_wordMap[key] = new WordInfo();
-		m_wordMap[key]->Load(file);
-	}
-#else
 	PosID urls;
 	file->ReadN(m_siteCounter, urls);
 
@@ -124,7 +79,6 @@ void InvertedIndexMap::Load(File * file){
 
 		m_chunkMap[key] = id;
 	}
-#endif
 }
 
 void InvertedIndexMap::IndexFromFile(const std::string& filePath){
@@ -215,84 +169,58 @@ WordInfo* InvertedIndexMap::GetWordInfo(const std::string & word){
 	std::string key = "";
 	for (char c : word) { key += tolower(c); }
 
-#ifdef OLD_APPROACH
-	auto it = m_wordMap.find(key);
-	if (it == m_wordMap.end()) {
-		m_wordMap[key] = new WordInfo();
-	}
-	return m_wordMap[key];
-#else
 	WordInfo* out = nullptr;
 
 	static PosID iter = 0;
 	iter++;
 
 	auto it = m_chunkMap.find(key);
-	if (it == m_chunkMap.end()) {
-		// Does not exist... add in the current chunk;
+	if (it != m_chunkMap.end()) {
+		// Found it!
+		// Meaning that the word was already created and added into an
+		// existing chunk. 
+		// Now it's necessary to check if that existing chunk is loaded.
 
-		// First check if the current chunk is full
-		if (m_currentChunk) {
-			if (m_currentChunk->wordMap.size() >= MAX_CHUNK_WORDS) {
-				// Save and close it if so.
-				m_currentChunk->Save(m_currentChunkId);
-
-				std::cout << iter << " Chunk is full:\n";
-				std::cout << "\t - ID:" << m_currentChunkId << "\n";
-				std::cout << "\t - Words:" << m_currentChunk->wordMap.size() << "\n";
-				std::cout << "\t - Max:" << MAX_CHUNK_WORDS << "\n";
-
-				delete m_currentChunk;
-				m_currentChunk = nullptr;
-			}
+		bool isNew = false;
+		IMapChunk* chunk = GetChunk(it->second, &isNew);
+		if (isNew) {
+			chunk->Load(it->second);
 		}
 
-		// Then check if it's necessary to create a new one
-		if (m_currentChunk == nullptr) {
-			m_currentChunk = new IMapChunk();
-			m_currentChunkId = m_chunkCount++;
-			std::cout << iter << " New Chunk created..." << m_currentChunkId << ". word count: " << m_numWords << "\n";
-			std::cout << "\t - Words:" << m_currentChunk->wordMap.size() << "\n";
-		}
+		// Found it, meaning that it's currently loaded
+		out = chunk->wordMap[key];
 
-		// Finally, add the new wordInfo
-		out = new WordInfo();
-
-		m_currentChunk->wordMap[key] = out;
-		m_chunkMap[key] = m_currentChunkId;
-		m_numWords++;
+		// Let's also set this to help us to free
+		chunk->lastUsed = iter;
 	}
 	else {
-		// The word was already indexed...
-		PosID fId = it->second;
+		// Word not found. 
 
-		if (fId == m_currentChunkId && m_currentChunk) {
-			// Good luck, it's in the current opened chunk!
-			out = m_currentChunk->wordMap[key];
-		}
-		else {
-			// It's not in the current chunk so it needs to be loaded from disk.
-			if (m_currentChunk) {
-				// Saving and freeing the current one...
-				m_currentChunk->Save(m_currentChunkId);
-				delete m_currentChunk;
+		// First, let's attempt to find an existing chunk with a free slot
+		PosID chunkID = -1;
+		IMapChunk* chunk = nullptr;
+		for (auto it : m_loadedChunks) {
+			if (it.second->wordMap.size() < MAX_CHUNK_WORDS) {
+				chunkID = it.first;
+				chunk = it.second;
+				break;
 			}
-
-			std::cout << iter << " FYI:" << m_currentChunkId << " will become " << fId << "\n";
-
-			// Loading the chunk from disk...
-			m_currentChunk = new IMapChunk();
-			m_currentChunkId = fId;
-			std::cout << iter << " Loading...\n\t - Before:" << m_currentChunk->wordMap.size() << "\n";
-			m_currentChunk->Load(fId);
-			std::cout << "\t - After:" << m_currentChunk->wordMap.size() << "\n";
-
-			// Finally get the WordInfo from it:
-			out = m_currentChunk->wordMap[key];
 		}
+		if (!chunk) {
+			// They're all full! Let's make a new one
+			bool isNew;
+			chunkID = m_chunkCount++;
+			chunk = GetChunk(chunkID, &isNew);
+		}
+
+		// Now let's add the word:
+		out = new WordInfo();
+		chunk->wordMap[key] = out;
+		m_chunkMap[key] = chunkID;
+		m_numWords++;
 	}
+
 	return out;
-#endif
 }
 
 PosID InvertedIndexMap::AddSite(const std::string & url){
@@ -322,5 +250,34 @@ void InvertedIndexMap::PrintResults(){
 
 void InvertedIndexMap::WriteCsvReport(const std::string & filePath){
 	// TODO
+}
+
+IMapChunk* InvertedIndexMap::GetChunk(PosID id, bool* isNew){
+	auto it = m_loadedChunks.find(id);
+	if (it != m_loadedChunks.end()) {
+		*isNew = false;
+		return it->second;
+	}
+
+	// Not found. Let's double check to see if the loaded chunk list
+	// is full and remove any acceeding ones.
+	while (m_loadedChunks.size() > MAX_CHUNKS_LOADED) {
+		PosID eKey = m_loadedChunks.begin()->first;
+		PosID eUsage = m_loadedChunks.begin()->second->lastUsed;
+
+		for (auto it : m_loadedChunks) {
+			if (it.second->lastUsed < eUsage) {
+				eKey = it.first;
+				eUsage = it.second->lastUsed;
+			}
+		}
+		delete m_loadedChunks[eKey];
+		m_loadedChunks.erase(eKey);
+	}
+
+	// Now, let's create and return a new one with this id
+	*isNew = true;
+	m_loadedChunks[id] = new IMapChunk();
+	return m_loadedChunks[id];
 }
 
