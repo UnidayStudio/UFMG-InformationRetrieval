@@ -4,7 +4,7 @@
 #include "File.h"
 
 IMapChunk::IMapChunk() {
-	lastUsed = 0;
+
 }
 
 IMapChunk::~IMapChunk() {
@@ -32,10 +32,8 @@ void IMapChunk::Save(File * file) {
 	file->WriteN(wordMap.size());
 
 	for (auto it : wordMap) {
-		if (it.second) {
-			file->WriteStr(it.first);
-			it.second->Save(file);
-		}
+		file->WriteStr(it.first);
+		it.second->Save(file);
 	}
 }
 

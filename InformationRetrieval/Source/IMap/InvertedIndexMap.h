@@ -17,6 +17,8 @@
 class File; 
 class IMapChunk;
 
+//#define OLD_APPROACH
+
 class InvertedIndexMap {
 public:
 	InvertedIndexMap();
@@ -47,19 +49,18 @@ private:
 	PosID m_siteCounter;
 	std::unordered_map<PosID, std::string> m_siteUrls;
 	
+#ifdef OLD_APPROACH
+	std::unordered_map<std::string, WordInfo*> m_wordMap;
+#else
 	// Specifies in which chunk is the world located
 	std::unordered_map<std::string, PosID> m_chunkMap;
 
 	PosID		m_numWords;
 
 	PosID		m_chunkCount;
-	//PosID		m_currentChunkId;
-	//IMapChunk*	m_currentChunk;
-
-	// NOTE: IT WILL NOT LOAD THE CHUNK!
-	IMapChunk* GetChunk(PosID id, bool* isNew);
-
-	std::unordered_map<PosID, IMapChunk*> m_loadedChunks;
+	PosID		m_currentChunkId;
+	IMapChunk*	m_currentChunk;
+#endif
 };
 
 #endif // !INVERTED_INDEX_H

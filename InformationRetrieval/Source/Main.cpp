@@ -111,17 +111,15 @@ int main(int argc, char** argv) {
 #ifdef INVERTED_INDEX_MAP_BUILD
 	{
 		InvertedIndexMap iMap;
-		std::vector<std::string> results; 
-		
-		for (auto path : GetFilesAt("Result\\")) {
-			// Ignoring the REPORT files
-			if (GetFileName(path)[0] != '_') {
-				results.push_back(path);
-			}
-		}
+		auto results = GetFilesAt("Result\\");
 
 		PosID count = 0;
 		for (auto& path : results) {
+			if (GetFileName(path)[0] == '_') {
+				// Ignoring the REPORT files
+				continue; 
+			}
+
 			iMap.IndexFromFile(path);
 
 			std::cout << count++ << "/" << results.size() << "\n";
