@@ -9,17 +9,12 @@
 
 #include "SiteResult.h"
 
+#define MAX_REFS_PER_CHUNK 10000000 // 10 M refs per chunk
+
 struct WordRef {
+	size_t wordId; // To lookup in a table later on!
 	size_t fileId;
 	size_t position;
-};
-
-struct WordInfo {
-	float frequency;
-	std::vector<WordRef> references;
-
-	void Save(File* file);
-	void Load(File* file);
 };
 
 class File;
@@ -29,38 +24,40 @@ public:
 	InvertedIndexMap();
 	virtual ~InvertedIndexMap();
 
+	void Save();
 	virtual void Save(File* file);
+
+	void Load();
 	virtual void Load(File* file);
 
+	// If m_wordReferences.size() >= maxRefs,
+	// then save it into a file and clear the vector.
+	void SaveChunk(size_t maxRefs = MAX_REFS_PER_CHUNK);
+
 	void IndexFromFile(const std::string& filePath);
-
-	// This method will index the site, adding its
-	// Url into the siteUrls (in case of future needs)
-	// and then parsing its html. It will add to the
-	// wordmap every word and ref found;
 	void IndexSite(const SiteResult& site);
-
-	// Gonna return the WordInfo struct of that specific 
-	// word. If it doesn't exists, this method will 
-	// automatically create and return it for you.
-	WordInfo* GetWordInfo(const std::string& word);
-
-	size_t AddSite(const std::string& url);
-	std::string GetSiteUrl(size_t id);
-
-	// The IndexSite will not calculate the frequency.
-	// Call this method when you're done indexing websites.
-	void CalculateWordsFrequency();
-
-	void PrintIMapInfo();
 	
-	void PrintResults();
-	void WriteCsvReport(const std::string& filePath);
-private:
-	size_t m_siteCounter;
-	std::unordered_map<size_t, std::string> m_siteUrls;
+	size_t AddSite(const std::string& url);
+	std::string GetSite(size_t id);
 
-	std::unordered_map<std::string, WordInfo*> m_wordMap;
+	size_t AddWord(const std::string& word);
+	std::string GetWord(size_t id);
+	size_t GetWordId(const std::string& word);
+
+	void AddReference(size_t word, size_t site, size_t position);
+private:
+	struct {
+		size_t wordCounter;
+		std::unordered_map<size_t, std::string> words;
+		std::unordered_map<std::string, size_t> wordsInverted;
+
+		size_t siteCounter;
+		std::unordered_map<size_t, std::string> sites;
+
+	} m_lookup; // Lookup Table
+
+	size_t m_chunkCount;
+	std::vector<WordRef> m_wordReferences;
 };
 
 #endif // !INVERTED_INDEX_H

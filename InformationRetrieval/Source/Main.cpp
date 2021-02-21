@@ -16,8 +16,8 @@
 /*=================
 // Assignment 03 //
 =================*/
-//#define INVERTED_INDEX_MAP_BUILD
-#define INVERTED_INDEX_MAP_TEST
+#define INVERTED_INDEX_MAP_BUILD
+//#define INVERTED_INDEX_MAP_TEST
 
 
 int main(int argc, char** argv) {
@@ -125,14 +125,8 @@ int main(int argc, char** argv) {
 			iMap.IndexFromFile(path);
 			std::cout << count++ << "/" << results.size() << "\n";
 		}
-
-		iMap.CalculateWordsFrequency();
-
-		File file("InvertedIndexMap.iMap", File::WRITE);
-		iMap.Save(&file);
-
-		iMap.PrintResults();
-		iMap.WriteCsvReport("InvertedIndexMapReport.csv");
+		
+		iMap.Save();
 	}
 #endif 
 

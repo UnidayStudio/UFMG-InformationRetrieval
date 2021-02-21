@@ -11,51 +11,112 @@
 #include "File.h"
 
 InvertedIndexMap::InvertedIndexMap() {
-	m_siteCounter = 0;
+	m_lookup.wordCounter = 0;
+	m_lookup.siteCounter = 0;
+
+	m_chunkCount = 0;
 }
 
 InvertedIndexMap::~InvertedIndexMap() {
-	for (auto it : m_wordMap) {
-		delete it.second;
-	}
-	m_wordMap.clear();
+	m_lookup.words.clear();
+	m_lookup.wordsInverted.clear();
+	m_lookup.sites.clear();
+	m_wordReferences.clear();
+}
 
-	m_siteUrls.clear();
+void InvertedIndexMap::Save() {
+	File file("InvertedIndexMap.iMap", File::WRITE);
+	Save(&file);
 }
 
 void InvertedIndexMap::Save(File * file){
-	file->WriteN(m_siteCounter, m_siteUrls.size(), m_wordMap.size());
+	file->WriteN(
+		m_lookup.wordCounter, m_lookup.siteCounter, 
+		m_lookup.words.size(), m_lookup.sites.size()
+	);
 
-	for (auto it : m_siteUrls) {
+	for (auto it : m_lookup.words) {
 		file->Write(it.first);
 		file->WriteStr(it.second);
 	}
-	for (auto it : m_wordMap) {
-		file->WriteStr(it.first);
-		it.second->Save(file);
+	for (auto it : m_lookup.sites) {
+		file->Write(it.first);
+		file->WriteStr(it.second);
 	}
+
+	SaveChunk(1);
+}
+
+void InvertedIndexMap::Load() {
+	File file("InvertedIndexMap.iMap", File::READ);
+	Load(&file);
 }
 
 void InvertedIndexMap::Load(File * file){
-	size_t urls, words;
+	size_t words, sites;
 
-	file->ReadN(m_siteCounter, urls, words);
-
-	for (size_t i = 0; i < urls; i++) {
+	file->ReadN(
+		m_lookup.wordCounter, m_lookup.siteCounter,
+		words, sites
+	);
+	
+	for (size_t i = 0; i < words; i++) {
 		size_t idx; std::string content;
 
 		file->Read(idx);
 		file->ReadStr(content);
 
-		m_siteUrls[idx] = content;
+		m_lookup.words[idx] = content;
+		m_lookup.wordsInverted[content] = idx;
 	}
-	for (size_t i = 0; i < words; i++) {
-		size_t idx; std::string key;
+	for (size_t i = 0; i < sites; i++) {
+		size_t idx; std::string content;
 
-		file->ReadStr(key);
+		file->Read(idx);
+		file->ReadStr(content);
 
-		m_wordMap[key] = new WordInfo();
-		m_wordMap[key]->Load(file);
+		m_lookup.sites[idx] = content;
+	}
+
+	/*
+	size_t refs;
+	file->Read(refs);
+	for (size_t i = 0; i < refs; i++) {
+		WordRef wRef;
+		file->Read(wRef);
+		m_wordReferences.push_back(wRef);
+	}
+	*/
+}
+
+
+bool SortRefs(WordRef a, WordRef b) {
+	if (a.wordId == b.wordId) {
+		if (a.fileId == b.fileId) {
+			return a.position < b.position;
+		}
+		return a.fileId < b.fileId;
+	}
+	return a.wordId < b.wordId;
+}
+
+void InvertedIndexMap::SaveChunk(size_t maxRefs){
+	if (m_wordReferences.size() == 0) {	return; }
+
+	if (m_wordReferences.size() >= maxRefs) {
+		File file(
+			"IMapChunks\\c" + std::to_string(m_chunkCount++) + ".iMapC", 
+			File::WRITE
+		);
+
+		std::sort(m_wordReferences.begin(), m_wordReferences.end(), SortRefs);
+
+		file.Write(m_wordReferences.size());
+		for (auto& ref : m_wordReferences) {
+			file.Write(ref);
+		}
+
+		m_wordReferences.clear();
 	}
 }
 
@@ -105,14 +166,14 @@ std::string FormatData(const std::string& html) {
 		}
 	}
 
-	CkHtmlToText htmlParser;
-	out = htmlParser.toText(out.c_str());
+	//CkHtmlToText htmlParser;
+	//out = htmlParser.toText(out.c_str());
 
 	return out;
 }
 
 void InvertedIndexMap::IndexSite(const SiteResult & site){
-	size_t sId = AddSite(site.url);
+	size_t siteId = AddSite(site.url);
 	std::string html = site.html;
 
 	html = FormatData(html);
@@ -145,156 +206,50 @@ void InvertedIndexMap::IndexSite(const SiteResult & site){
 		}
 
 		for (auto word : words) {
-			WordInfo* wInfo = GetWordInfo(word);
-
-			if (wInfo) {
-				wInfo->references.push_back({ sId, position });
-				position++;
-			}
+			size_t wordId = GetWordId(word);
+			AddReference(wordId, siteId, position);
 		}
 	}
 }
 
-WordInfo* InvertedIndexMap::GetWordInfo(const std::string & word){
-	std::string key = "";
-	for (char c : word) { key += tolower(c); }
-
-	auto it = m_wordMap.find(key);
-	if (it == m_wordMap.end()) {
-		m_wordMap[key] = new WordInfo();
-		m_wordMap[key]->frequency = -1.f;
-	}
-	return m_wordMap[key];
-}
-
 size_t InvertedIndexMap::AddSite(const std::string & url){
-	size_t sId = m_siteCounter++;
-	m_siteUrls[sId] = url;
+	size_t sId = m_lookup.siteCounter++;
+	m_lookup.sites[sId] = url;
 	return sId;
 }
 
-std::string InvertedIndexMap::GetSiteUrl(size_t id){
-	auto it = m_siteUrls.find(id);
-	if (it != m_siteUrls.end()) {
+std::string InvertedIndexMap::GetSite(size_t id){
+	auto it = m_lookup.sites.find(id);
+	if (it != m_lookup.sites.end()) {
 		return it->second;
 	}
 	return "";
 }
 
-bool SortRefs(WordRef a, WordRef b) {
-	if (a.fileId == b.fileId) {
-		return a.position < b.position;
-	}
-	return a.fileId < b.fileId;
+size_t InvertedIndexMap::AddWord(const std::string & word){
+	size_t sId = m_lookup.wordCounter++;
+	m_lookup.words[sId] = word;
+	m_lookup.wordsInverted[word] = sId;
+	return sId;
 }
 
-void InvertedIndexMap::CalculateWordsFrequency(){
-	for (auto it : m_wordMap) {
-		auto& refs = it.second->references;
-		if (refs.size() == 0) {
-			continue;
-		}
-		std::sort(refs.begin(), refs.end(), SortRefs);
-
-		int siteCount = 1;
-		for (int i = 1; i < refs.size(); i++) {
-			if (refs[i - 1].fileId != refs[i].fileId) {
-				siteCount++;
-			}
-		}
-		it.second->frequency = float(siteCount) / float(m_siteCounter);
+std::string InvertedIndexMap::GetWord(size_t id){
+	auto it = m_lookup.words.find(id);
+	if (it != m_lookup.words.end()) {
+		return it->second;
 	}
+	return "";
 }
 
-void InvertedIndexMap::PrintIMapInfo(){
-	std::cout << "Status:\n";
-	std::cout << "URLs: " << m_siteUrls.size() << "\n";
-	uint64_t sizeUrls = 0;
-	for (auto it : m_siteUrls) {
-		sizeUrls += sizeof(size_t);
-		sizeUrls += sizeof(std::string) + sizeof(char) * it.second.size();
+size_t InvertedIndexMap::GetWordId(const std::string & word){
+	auto it = m_lookup.wordsInverted.find(word);
+	if (it != m_lookup.wordsInverted.end()) {
+		return it->second;
 	}
-	std::cout << "\t - Size: " << sizeUrls << "bytes\n";
-
-	std::cout << "Words: " << m_wordMap.size() << "\n";
-	int refs = 0;
-	uint64_t sizeWords = 0;
-	for (auto word : m_wordMap) {
-		refs += word.second->references.size();
-
-		sizeWords += sizeof(std::string);
-		sizeWords += sizeof(WordInfo*) + sizeof(WordInfo);
-		sizeWords += sizeof(WordRef) * word.second->references.size();
-	}
-	std::cout << "\t - References: " << refs << "\n";
-	std::cout << "\t - Size: " << sizeWords << "bytes\n";
-	std::cout << "\n";
+	return AddWord(word);
 }
 
-void InvertedIndexMap::PrintResults(){
-	size_t minRef = SIZE_MAX;
-	std::string minWord = "";
-
-	size_t maxRef = 0;	
-	std::string maxWord = "";
-
-	size_t avgRefs = 0;
-	std::vector<std::string> samples;
-	for (auto it : m_wordMap) {
-		size_t refs = it.second->references.size();
-		avgRefs += refs;
-
-		if (refs < minRef) {
-			minRef = refs;
-			minWord = it.first;
-		}
-		if (refs > maxRef) {
-			maxRef = refs;
-			maxWord = it.first;
-		}
-	}
-	avgRefs /= m_wordMap.size();
-	
-	std::cout << "----------------------------\n";
-	std::cout << "Sites Indexed: " << m_siteUrls.size() << "\n";
-	std::cout << "Words Indexed: " << m_wordMap.size() << "\n";
-
-	std::cout << " - Less used word: " << minWord;
-	std::cout << " (" << minRef << ")\n";
-
-	std::cout << " - Most used word: " << maxWord;
-	std::cout << " (" << maxRef << ")\n";
-
-	std::cout << " - Average Ref count: " << avgRefs << "\n";
-	std::cout << "----------------------------\n";
-}
-
-void InvertedIndexMap::WriteCsvReport(const std::string & filePath){
-	std::ofstream report(filePath, std::ofstream::out);
-	// Header:
-	report << "Word, Frequence, Occurrences\n";
-
-	for (auto it : m_wordMap) {
-		report << it.first << ", ";
-		report << std::fixed << it.second->frequency << ", ";
-		report << it.second->references.size() << "\n";
-	}
-
-	report.close();
-}
-
-void WordInfo::Save(File * file){
-	file->Write(frequency);
-	file->Write(references.size());
-	file->Write(references[0], references.size());
-}
-
-void WordInfo::Load(File * file){
-	file->Read(frequency);
-
-	size_t size;
-	file->Read(size);
-
-	references.resize(size);
-	file->Read(references[0], size);
+void InvertedIndexMap::AddReference(size_t word, size_t site, size_t position){
+	m_wordReferences.push_back({ word, site, position });
+	SaveChunk();
 }
