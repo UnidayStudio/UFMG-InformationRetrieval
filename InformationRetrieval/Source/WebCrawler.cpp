@@ -61,14 +61,14 @@ void __UserInputs() {
 	}
 }
 
-void WebCrawler::Run(PosID limit){
+void WebCrawler::Run(size_t limit){
 	m_crawlLimit = limit;
 
 	Timer timer;
 
 	std::thread t(__UserInputs);
 
-	PosID counter = 0;
+	size_t counter = 0;
 	while (m_crawledUrlCount < m_crawlLimit) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -130,14 +130,14 @@ void WebCrawler::CrawlUrl(const std::string & url){
 	m_activeThreadCount++;
 	{
 		std::vector<SiteResult> results;
-		PosID fileOutputs = 1;
+		size_t fileOutputs = 1;
 
 		CkSpider spider;
 		spider.Initialize(url.c_str());
 		spider.AddUnspidered(url.c_str());
 
-		PosID crawledHere = 0;
-		PosID pageSizes = 0;
+		size_t crawledHere = 0;
+		size_t pageSizes = 0;
 		double timeSpent = 0.0;
 
 		while (1) {
@@ -244,7 +244,7 @@ void WebCrawler::SpawnThread(const std::string & url){
 	m_threadPoolLock.unlock();
 }
 
-void WebCrawler::WriteResults(std::vector<SiteResult>& results, const std::string & url, const PosID & iteration){
+void WebCrawler::WriteResults(std::vector<SiteResult>& results, const std::string & url, const size_t & iteration){
 	std::string name = "Result\\" + GetUrlAsFileName(url);
 	name += "_" + std::to_string(iteration) + ".crawlData";
 

@@ -5,7 +5,7 @@
 #include "WebCrawler.h"
 #include "File.h"
 
-#include "IMap/InvertedIndexMap.h"
+#include "InvertedIndexMap.h"
 
 /*=================
 // Assignment 02 //
@@ -16,7 +16,7 @@
 /*=================
 // Assignment 03 //
 =================*/
-#define INVERTED_INDEX_MAP_BUILD
+//#define INVERTED_INDEX_MAP_BUILD
 #define INVERTED_INDEX_MAP_TEST
 
 
@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
 		// Header:
 		urlReport << "URL, Title, Keywords, Description, Crawl Time (ms), Size (bytes)\n";
 
-		PosID badAllocs = 0;
+		size_t badAllocs = 0;
 		for (auto& path : results) {
 			std::string name = GetFileName(path);
 
@@ -58,8 +58,8 @@ int main(int argc, char** argv) {
 				File f(path, File::READ);
 
 				std::string url;
-				PosID crawledHere = 0;
-				PosID pageSizes = 0;
+				size_t crawledHere = 0;
+				size_t pageSizes = 0;
 				double timeSpent = 0.0;
 			
 				f.ReadStr(url);
@@ -73,10 +73,10 @@ int main(int argc, char** argv) {
 			else { // Crawl File
 				File f(path, File::READ);
 
-				PosID s;
+				size_t s;
 				f.Read(s);
 
-				for (PosID i = 0; i < s; i++) {
+				for (size_t i = 0; i < s; i++) {
 					SiteResult site;
 					try {
 						site.Load(&f);
@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
 		InvertedIndexMap iMap;
 		auto results = GetFilesAt("Result\\");
 
-		PosID count = 0;
+		size_t count = 0;
 		for (auto& path : results) {
 			if (GetFileName(path)[0] == '_') {
 				// Ignoring the REPORT files
@@ -124,12 +124,14 @@ int main(int argc, char** argv) {
 
 			std::cout << count++ << "/" << results.size() << "\n";
 		}
-		
+
+		iMap.CalculateWordsFrequency();
+
 		File file("InvertedIndexMap.iMap", File::WRITE);
 		iMap.Save(&file);
 
-		//iMap.PrintResults();
-		//iMap.WriteCsvReport("InvertedIndexMapReport.csv");
+		iMap.PrintResults();
+		iMap.WriteCsvReport("InvertedIndexMapReport.csv");
 	}
 #endif 
 
@@ -139,7 +141,9 @@ int main(int argc, char** argv) {
 
 		File file("InvertedIndexMap.iMap", File::READ);
 		iMap.Load(&file);
-		
+
+		iMap.PrintIMapInfo();
+
 		//iMap.PrintResults();
 
 		std::cout << "[Testing the Map... type q to quit!]\n";
@@ -154,21 +158,21 @@ int main(int argc, char** argv) {
 			}
 
 			auto info = iMap.GetWordInfo(userInput);
-			std::unordered_map<PosID, int> ids;
+			std::unordered_map<size_t, int> ids;
 			for (auto& ref : info->references) {
 				if (ids.find(ref.fileId) == ids.end()) {
 					ids[ref.fileId] = 0;
 				}
 				ids[ref.fileId] += 1;
 			}			
-			std::vector<std::pair<PosID, int>> idsFinal;
+			std::vector<std::pair<size_t, int>> idsFinal;
 			for (auto it : ids) {
 				idsFinal.push_back(it);
 			}
 			std::sort(
 				idsFinal.begin(), 
 				idsFinal.end(),
-				[](std::pair<PosID, int> a, std::pair<PosID, int> b) {
+				[](std::pair<size_t, int> a, std::pair<size_t, int> b) {
 					return a.second < b.second;
 				}
 			);
@@ -179,6 +183,7 @@ int main(int argc, char** argv) {
 				std::cout << iMap.GetSiteUrl(it.first) << "\n";
 			}
 			std::cout << "-----\n";
+			std::cout << " - Frequency: " << std::fixed << info->frequency << "\n";
 			std::cout << " - Occurrences: " << info->references.size() << "\n";
 		}
 	}

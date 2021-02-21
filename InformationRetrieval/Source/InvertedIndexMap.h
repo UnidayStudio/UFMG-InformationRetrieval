@@ -9,15 +9,20 @@
 
 #include "SiteResult.h"
 
-#include "IMap/Word.h"
+struct WordRef {
+	size_t fileId;
+	size_t position;
+};
 
-#define MAX_CHUNK_WORDS 50000
-#define MAX_CHUNKS_LOADED 10
+struct WordInfo {
+	float frequency;
+	std::vector<WordRef> references;
 
-class File; 
-class IMapChunk;
+	void Save(File* file);
+	void Load(File* file);
+};
 
-//#define OLD_APPROACH
+class File;
 
 class InvertedIndexMap {
 public:
@@ -40,27 +45,22 @@ public:
 	// automatically create and return it for you.
 	WordInfo* GetWordInfo(const std::string& word);
 
-	PosID AddSite(const std::string& url);
-	std::string GetSiteUrl(PosID id);
-		
+	size_t AddSite(const std::string& url);
+	std::string GetSiteUrl(size_t id);
+
+	// The IndexSite will not calculate the frequency.
+	// Call this method when you're done indexing websites.
+	void CalculateWordsFrequency();
+
+	void PrintIMapInfo();
+	
 	void PrintResults();
 	void WriteCsvReport(const std::string& filePath);
 private:
-	PosID m_siteCounter;
-	std::unordered_map<PosID, std::string> m_siteUrls;
-	
-#ifdef OLD_APPROACH
+	size_t m_siteCounter;
+	std::unordered_map<size_t, std::string> m_siteUrls;
+
 	std::unordered_map<std::string, WordInfo*> m_wordMap;
-#else
-	// Specifies in which chunk is the world located
-	std::unordered_map<std::string, PosID> m_chunkMap;
-
-	PosID		m_numWords;
-
-	PosID		m_chunkCount;
-	PosID		m_currentChunkId;
-	IMapChunk*	m_currentChunk;
-#endif
 };
 
 #endif // !INVERTED_INDEX_H
