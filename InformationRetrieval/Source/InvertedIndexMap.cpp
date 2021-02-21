@@ -164,7 +164,7 @@ bool SortChunkPart(MergeChunkPart* a, MergeChunkPart* b) {
 	return SortRefs(a->last, b->last);
 }
 
-void InvertedIndexMap::MergeChunks(bool deleteParts){
+void InvertedIndexMap::MergeChunks(){
 	printf("[MERGE CHUNK]");
 	// Preparing the structures for the merge...
 	std::vector<MergeChunkPart*> parts;

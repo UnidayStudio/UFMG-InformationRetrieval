@@ -36,7 +36,7 @@ public:
 
 	// Will merge all the chunks inside the IMapChunks folder
 	// Into a single external sorted chunk file.
-	void MergeChunks(bool deleteParts=false);
+	void MergeChunks();
 
 	void IndexFromFile(const std::string& filePath);
 	void IndexSite(const SiteResult& site);
