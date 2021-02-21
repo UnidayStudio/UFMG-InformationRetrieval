@@ -17,6 +17,7 @@
 // Assignment 03 //
 =================*/
 #define INVERTED_INDEX_MAP_BUILD
+#define __SKIP_CHUNK_BUILD
 //#define INVERTED_INDEX_MAP_TEST
 
 
@@ -111,21 +112,28 @@ int main(int argc, char** argv) {
 #ifdef INVERTED_INDEX_MAP_BUILD
 	{
 		InvertedIndexMap iMap;
-		std::vector<std::string> results;
 
-		for (auto path : GetFilesAt("Result\\")) {
-			// Ignoring the REPORT files
-			if (GetFileName(path)[0] != '_') {
-				results.push_back(path);
+#ifdef __SKIP_CHUNK_BUILD
+		iMap.Load();
+#else
+		{ // Parsing...
+			std::vector<std::string> results;
+
+			for (auto path : GetFilesAt("Result\\")) {
+				if (GetFileName(path)[0] != '_') { // Ignoring the REPORT files
+					results.push_back(path); 
+				}
+			}
+
+			size_t count = 0;
+			for (auto& path : results) {
+				iMap.IndexFromFile(path);
+				std::cout << count++ << "/" << results.size() << "\n";
 			}
 		}
+#endif	
+		iMap.MergeChunks();
 
-		size_t count = 0;
-		for (auto& path : results) {
-			iMap.IndexFromFile(path);
-			std::cout << count++ << "/" << results.size() << "\n";
-		}
-		
 		iMap.Save();
 	}
 #endif 

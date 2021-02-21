@@ -6,6 +6,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include <stdio.h>
+
 #include "CkHtmlToText.h"
 
 #include "File.h"
@@ -22,6 +24,7 @@ InvertedIndexMap::~InvertedIndexMap() {
 	m_lookup.wordsInverted.clear();
 	m_lookup.sites.clear();
 	m_wordReferences.clear();
+	m_wordRefMap.clear();
 }
 
 void InvertedIndexMap::Save() {
@@ -42,6 +45,11 @@ void InvertedIndexMap::Save(File * file){
 	for (auto it : m_lookup.sites) {
 		file->Write(it.first);
 		file->WriteStr(it.second);
+	}
+
+	file->Write(m_wordRefMap.size());
+	for (auto it : m_wordRefMap) {
+		file->WriteN(it.first, it.second);
 	}
 
 	SaveChunk(1);
@@ -78,15 +86,15 @@ void InvertedIndexMap::Load(File * file){
 		m_lookup.sites[idx] = content;
 	}
 
-	/*
-	size_t refs;
-	file->Read(refs);
-	for (size_t i = 0; i < refs; i++) {
-		WordRef wRef;
-		file->Read(wRef);
-		m_wordReferences.push_back(wRef);
-	}
-	*/
+	/*size_t refMapCount;
+	file->Read(refMapCount);
+	for (size_t i = 0; i < refMapCount; i++) {
+		size_t idx;
+		std::pair<size_t, size_t> refInfo;
+		file->ReadN(idx, refInfo);
+
+		m_wordRefMap[idx] = refInfo;
+	}*/
 }
 
 
@@ -118,6 +126,136 @@ void InvertedIndexMap::SaveChunk(size_t maxRefs){
 
 		m_wordReferences.clear();
 	}
+}
+
+struct MergeChunkPart {
+	MergeChunkPart(const std::string& path) {
+		lastIsValid = false;
+		file = new File(path, File::READ);
+		file->Read(toRead);
+	}
+	virtual ~MergeChunkPart() {
+		delete file;
+	}
+
+	// Returns false if ended (failure)
+	bool ReadNext() {
+		lastIsValid = false;
+		if (toRead == 0) {
+			return false;
+		}
+		auto out = file->Read(last);
+		if (!out) {
+			toRead = 0;
+			return false;
+		}
+		lastIsValid = true;
+		toRead--;
+		return true;
+	}
+
+	File* file;
+	WordRef last;
+	bool lastIsValid;
+	size_t toRead;
+};
+
+bool SortChunkPart(MergeChunkPart* a, MergeChunkPart* b) {
+	return SortRefs(a->last, b->last);
+}
+
+void InvertedIndexMap::MergeChunks(bool deleteParts){
+	printf("[MERGE CHUNK]");
+	// Preparing the structures for the merge...
+	std::vector<MergeChunkPart*> parts;
+
+	size_t totalRefs = 0;
+	for (auto& f : GetFilesAt("IMapChunks\\")) {
+		auto part = new MergeChunkPart(f);
+
+		totalRefs += part->toRead;
+		part->ReadNext();
+
+		parts.push_back(part);
+	}
+
+	File out("IMapReferences.iMapRef", File::WRITE);
+	out.Write(totalRefs);
+
+	//
+	bool lwInit = false;
+	size_t lastWord = -1; // Overflow, that's ok
+	size_t lwStart = 0;
+
+	size_t parsedRefs = 0;
+	int _lastPercent = 0;
+	while (parsedRefs < totalRefs && parts.size() > 0) {
+		{
+			int percentage = (float(parsedRefs) / float(totalRefs)) * 100.f;
+			if (percentage != _lastPercent) {
+				_lastPercent = percentage;
+				printf("%3.2f%%... %10zu of %10zu\n",
+					(float(parsedRefs) / float(totalRefs)) * 100.f,
+					parsedRefs, totalRefs
+				);
+			}
+		}
+		
+		std::sort(parts.begin(), parts.end(), SortChunkPart);
+
+		if (parts[0]->lastIsValid) {
+			WordRef ref = parts[0]->last;
+			out.Write(ref);
+
+			if (lastWord != ref.wordId || !lwInit) {
+				if (lwInit) {
+					m_wordRefMap[lastWord] = { lwStart, parsedRefs };
+				}
+				else {
+					lwInit = true;
+				}
+				lastWord = ref.wordId;
+				lwStart = parsedRefs;
+			}
+			parsedRefs++;
+		}
+
+		if (parts[0]->toRead == 0 || !parts[0]->lastIsValid) {
+			// Nothing left to read!
+			parts.erase(parts.begin());
+		}
+		else {
+			// Read the next one!
+			// I made a small optimization here: If the next one is
+			// the same word as the last, there is no need to run
+			// everything again, just add it to the output!
+
+			auto lastP = parts[0]->last;
+
+			while (parts.size() > 0) {
+				bool success = parts[0]->ReadNext();
+				if (!success) {
+					parts.erase(parts.begin());
+				}
+				else {
+					if (lastP.wordId == parts[0]->last.wordId) {
+						WordRef ref = parts[0]->last;
+						out.Write(ref);
+						parsedRefs++;
+					}
+					else {
+						break;
+					}
+				}
+			}
+		}
+	}
+	for (auto part : parts) {
+		delete part;
+	}
+	parts.clear();
+
+	printf("\nFinished!\n");
 }
 
 void InvertedIndexMap::IndexFromFile(const std::string& filePath){
